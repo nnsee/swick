@@ -1,7 +1,6 @@
 import osproc
 import std/parseopt
 import system
-import json
 import swayipc
 import swayipc/[commands, util]
 
@@ -47,22 +46,6 @@ proc parseOpts(): (string, string, string) =
     use = "class"
 
   return (use, identifier, cmd)
-
-proc filter_dict(j: JsonNode, key: string, value: string): seq[JsonNode] =
-  ## Filter dict by key and value
-  result = @[]
-  case j.kind
-  of JObject:
-    for k, v in pairs j:
-      if k == key and v.getStr() == value:
-        result.add j
-      else:
-        result.add filter_dict(v, key, value)
-  of JArray:
-    for i in j:
-      result.add filter_dict(i, key, value)
-  else:
-    discard
 
 ## main ##
 
