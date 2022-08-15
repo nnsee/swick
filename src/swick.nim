@@ -1,4 +1,3 @@
-import osproc
 import std/parseopt
 import system
 import swayipc
@@ -59,15 +58,13 @@ let nodes =
   if use == "class": tree.filterNodesByClass(identifier, 1)
   else: tree.filterNodesByAppID(identifier, 1)
 
-if nodes.len == 0:
-  sway.close
-  system.quit(cmd.execCmd)
+let sway_cmd =
+  if nodes.len == 0: "exec " & cmd
+  else:
+    let selector = "[" & use & "=" & identifier & "] "
+    if nodes[0].focused: selector & "move scratchpad"
+    else: selector & "focus"
 
-let selector = "[" & use & "=" & identifier & "] "
-
-if nodes[0].focused == false:
-  discard sway.run_command(selector & "focus")
-else:
-  discard sway.run_command(selector & "move scratchpad")
-
+let ret = sway.run_command(sway_cmd)[0]
 sway.close
+system.quit(if ret.success: 0 else: 1)
