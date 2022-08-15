@@ -3,6 +3,27 @@ import system
 import swayipc
 import swayipc/[commands, util]
 
+const helpText = """swick - quickly launch or focus/unfocus application
+
+usage: swick -u:use -i:identifier -c:cmd
+
+flags:
+  u, use         (default: class) which qualifier to use (app_id, class)
+  i, identifier  the window's identifier as per the qualifier
+  c, cmd         command to use to launch the application
+
+examples:
+  # focus or launch spotify
+  swick -u:class -i:Spotify -c:spotify
+
+  # focus or launch obsidian with extra flags, implicitly use class
+  swick -i:obsidian -c:'/bin/electron18 /usr/lib/obsidian/app.asar --force-device-scale-factor=1'"""
+
+proc optErr(err: string) {.inline.} =
+  echo err & ", bailing"
+  echo "run with flag -h for help"
+  system.quit(1)
+
 proc parseOpts(): (string, string, string) =
   var use, identifier, cmd: string
   var p = initOptParser()
@@ -11,37 +32,33 @@ proc parseOpts(): (string, string, string) =
     case p.kind
     of cmdEnd: break
     of cmdArgument:
-      echo "erronous extra argument `", p.val, "`, bailing"
-      system.quit(1)
+      optErr("erronous extra argument `" & p.val & "`")
     of cmdShortOption, cmdLongOption:
+      if p.key == "h" or p.key == "help":
+        echo helpText
+        system.quit(0)
       if p.val == "":
-        echo "no value set for flag ", p.key, ", bailing"
-        system.quit(1)
+        optErr("no value set for flag " & p.key)
       case p.key
       of "u", "use":
         if p.val == "class" or p.val == "app_id":
           use = p.val
         else:
-          echo "unknown use value `", p.val, "`, bailing"
-          system.quit(1)
+          optErr("unknown use value `" & p.val)
       of "i", "identifier":
         identifier = p.val
       of "c", "cmd":
         cmd = p.val
       else:
-        echo "unknown key and value pair: ", p.key, ", ", p.val
-        system.quit(1)
+        optErr("unknown key and value pair: " & p.key & ", " & p.val)
 
   if identifier == "":
-    echo "identifier not specified, bailing"
-    system.quit(1)
+    optErr("identifier not specified")
 
   if cmd == "":
-    echo "start-up command not specified, bailing"
-    system.quit(1)
+    optErr("start-up command not specified")
 
   if use == "":
-    echo "use flag not specified, assuming class"
     use = "class"
 
   return (use, identifier, cmd)
@@ -67,4 +84,4 @@ let sway_cmd =
 
 let ret = sway.run_command(sway_cmd)[0]
 sway.close
-system.quit(if ret.success: 0 else: 1)
+system.quit(if ret.success: 0 else: 2)
