@@ -63,25 +63,27 @@ proc parseOpts(): (string, string, string) =
 
   return (use, identifier, cmd)
 
-## main ##
+proc main(): int =
+  let (use, identifier, cmd) = parseOpts()
 
-let (use, identifier, cmd) = parseOpts()
+  let sway = newSwayConnection()
 
-let sway = newSwayConnection()
+  let tree = sway.get_tree
 
-let tree = sway.get_tree
+  let nodes =
+    if use == "class": tree.filterNodesByClass(identifier, 1)
+    else: tree.filterNodesByAppID(identifier, 1)
 
-let nodes =
-  if use == "class": tree.filterNodesByClass(identifier, 1)
-  else: tree.filterNodesByAppID(identifier, 1)
+  let sway_cmd =
+    if nodes.len == 0: "exec " & cmd
+    else:
+      let selector = "[" & use & "=" & identifier & "] "
+      if nodes[0].focused: selector & "move scratchpad"
+      else: selector & "focus"
 
-let sway_cmd =
-  if nodes.len == 0: "exec " & cmd
-  else:
-    let selector = "[" & use & "=" & identifier & "] "
-    if nodes[0].focused: selector & "move scratchpad"
-    else: selector & "focus"
+  let ret = sway.run_command(sway_cmd)[0]
+  sway.close
+  if ret.success: 0 else: 2
 
-let ret = sway.run_command(sway_cmd)[0]
-sway.close
-system.quit(if ret.success: 0 else: 2)
+when isMainModule:
+  system.quit(main())
