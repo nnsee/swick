@@ -1,7 +1,7 @@
 import std/parseopt
 import system
-import swayipc
-import swayipc/[commands, util]
+import swayipc2
+import swayipc2/[commands, util]
 
 const helpText = """swick - quickly launch or focus/unfocus application
 
