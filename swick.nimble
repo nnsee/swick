@@ -8,4 +8,4 @@ bin           = @["swick"]
 
 # Dependencies
 requires "nim >= 1.6.6"
-requires "swayipc >= 0.1.0"
+requires "swayipc2 >= 0.1.0"
