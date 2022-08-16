@@ -1,7 +1,6 @@
 import std/parseopt
 import system
 import swayipc2/[connection, commands, util]
-import std/asyncdispatch
 
 const helpText = """swick - quickly launch or focus/unfocus application
 
@@ -63,42 +62,49 @@ proc parseOpts(): (string, string, string) =
 
   return (use, identifier, cmd)
 
-proc main(): int =
-  let (use, identifier, cmd) = parseOpts()
-  let sway = connect()
-  let tree = sway.get_tree
-  let nodes =
-    if use == "class": tree.filterNodesByClass(identifier, 1)
-    else: tree.filterNodesByAppID(identifier, 1)
+when defined(async):
+  import std/asyncdispatch
+  proc main() {.async.} =
+    let (use, identifier, cmd) = parseOpts()
+    let sway = await connect_async()
+    let tree = await sway.get_tree
+    let nodes =
+      if use == "class": tree.filterNodesByClass(identifier, 1)
+      else: tree.filterNodesByAppID(identifier, 1)
 
-  let sway_cmd =
-    if nodes.len == 0: "exec " & cmd
-    else:
-      let selector = "[" & use & "=" & identifier & "] "
-      if nodes[0].focused: selector & "move scratchpad"
-      else: selector & "focus"
+    let sway_cmd =
+      if nodes.len == 0: "exec " & cmd
+      else:
+        let selector = "[" & use & "=" & identifier & "] "
+        if nodes[0].focused: selector & "move scratchpad"
+        else: selector & "focus"
 
-  let ret = sway.run_command(sway_cmd)[0]
-  sway.close
-  if ret.success: 0 else: 2
+    let ret = (await sway.run_command(sway_cmd))[0]
+    sway.close
+    system.quit(if ret.success: 0 else: 2)
 
-proc asyncMain() {.async.} =
-  let (use, identifier, cmd) = parseOpts()
-  let sway = await connect_async()
-  let tree = await sway.get_tree
-  let nodes =
-    if use == "class": tree.filterNodesByClass(identifier, 1)
-    else: tree.filterNodesByAppID(identifier, 1)
+else:
+  proc main() =
+    let (use, identifier, cmd) = parseOpts()
+    let sway = connect()
+    let tree = sway.get_tree
+    let nodes =
+      if use == "class": tree.filterNodesByClass(identifier, 1)
+      else: tree.filterNodesByAppID(identifier, 1)
 
-  let sway_cmd =
-    if nodes.len == 0: "exec " & cmd
-    else:
-      let selector = "[" & use & "=" & identifier & "] "
-      if nodes[0].focused: selector & "move scratchpad"
-      else: selector & "focus"
+    let sway_cmd =
+      if nodes.len == 0: "exec " & cmd
+      else:
+        let selector = "[" & use & "=" & identifier & "] "
+        if nodes[0].focused: selector & "move scratchpad"
+        else: selector & "focus"
 
-  discard await sway.run_command(sway_cmd)
-  sway.close
+    let ret = sway.run_command(sway_cmd)[0]
+    sway.close
+    system.quit(if ret.success: 0 else: 2)
 
 when isMainModule:
-  waitFor asyncMain()
+  when defined(async):
+    waitFor main()
+  else:
+    main()
