@@ -75,7 +75,7 @@ when defined(async):
     let sway_cmd =
       if nodes.len == 0: "exec " & cmd
       else:
-        let selector = "[" & use & "=" & identifier & "] "
+        let selector = "[" & use & "=\"" & identifier & "\"] "
         if nodes[0].focused: selector & "move scratchpad"
         else: selector & "focus"
 
@@ -95,7 +95,7 @@ else:
     let sway_cmd =
       if nodes.len == 0: "exec " & cmd
       else:
-        let selector = "[" & use & "=" & identifier & "] "
+        let selector = "[" & use & "=\"" & identifier & "\"] "
         if nodes[0].focused: selector & "move scratchpad"
         else: selector & "focus"
 
