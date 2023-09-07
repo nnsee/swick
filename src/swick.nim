@@ -1,4 +1,4 @@
-import std/parseopt
+import std/[parseopt, strutils]
 import system
 import swayipc2/[connection, commands, util, replies]
 
@@ -73,7 +73,7 @@ when isMainModule:
     sway_cmd =
       if nodes.len == 0: "exec " & cmd
       else:
-        let selector = "[" & use & "=\"" & identifier & "\"] "
+        let selector = "[" & use & "=" & identifier.escape & "] "
         if nodes[0].focused: selector & "move scratchpad"
         else: selector & "focus"
     ret = sway.run_command(sway_cmd)[0]
