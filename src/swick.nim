@@ -1,6 +1,6 @@
 import std/parseopt
 import system
-import swayipc2/[connection, commands, util]
+import swayipc2/[connection, commands, util, replies]
 
 const helpText = """swick - quickly launch or focus/unfocus application
 
@@ -21,7 +21,7 @@ examples:
 proc optErr(err: string) {.inline.} =
   echo err & ", bailing"
   echo "run with flag -h for help"
-  system.quit(1)
+  system.quit 1
 
 proc parseOpts(): (string, string, string) =
   var use, identifier, cmd: string
@@ -62,49 +62,21 @@ proc parseOpts(): (string, string, string) =
 
   return (use, identifier, cmd)
 
-when defined(async):
-  import std/asyncdispatch
-  proc main() {.async.} =
-    let (use, identifier, cmd) = parseOpts()
-    let sway = await connect_async()
-    let tree = await sway.get_tree
-    let nodes =
-      if use == "class": tree.filterNodesByClass(identifier, 1)
-      else: tree.filterNodesByAppID(identifier, 1)
-
-    let sway_cmd =
-      if nodes.len == 0: "exec " & cmd
-      else:
-        let selector = "[" & use & "=\"" & identifier & "\"] "
-        if nodes[0].focused: selector & "move scratchpad"
-        else: selector & "focus"
-
-    let ret = (await sway.run_command(sway_cmd))[0]
-    sway.close
-    system.quit(if ret.success: 0 else: 2)
-
-else:
-  proc main() =
-    let (use, identifier, cmd) = parseOpts()
-    let sway = connect()
-    let tree = sway.get_tree
-    let nodes =
-      if use == "class": tree.filterNodesByClass(identifier, 1)
-      else: tree.filterNodesByAppID(identifier, 1)
-
-    let sway_cmd =
-      if nodes.len == 0: "exec " & cmd
-      else:
-        let selector = "[" & use & "=\"" & identifier & "\"] "
-        if nodes[0].focused: selector & "move scratchpad"
-        else: selector & "focus"
-
-    let ret = sway.run_command(sway_cmd)[0]
-    sway.close
-    system.quit(if ret.success: 0 else: 2)
-
 when isMainModule:
-  when defined(async):
-    waitFor main()
-  else:
-    main()
+  let
+    (use, identifier, cmd) = parseOpts()
+    sway = connect()
+    tree = sway.get_tree
+    nodes =
+      if use == "class": tree.filterNodesByClass(identifier, 1)
+      else: tree.filterNodesByAppID(identifier, 1)
+    sway_cmd =
+      if nodes.len == 0: "exec " & cmd
+      else:
+        let selector = "[" & use & "=\"" & identifier & "\"] "
+        if nodes[0].focused: selector & "move scratchpad"
+        else: selector & "focus"
+    ret = sway.run_command(sway_cmd)[0]
+
+  sway.close
+  system.quit if ret.success: 0 else: 2
