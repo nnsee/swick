@@ -72,10 +72,10 @@ when isMainModule:
       else: tree.filterNodesByAppID(identifier, 1)
     sway_cmd =
       if nodes.len == 0: "exec " & cmd
-      else:
-        let selector = "[" & use & "=" & identifier.escape & "] "
-        if nodes[0].focused: selector & "move scratchpad"
-        else: selector & "focus"
+      else: "[" & use & "=" & identifier.escape & "] " & (
+        if nodes[0].focused: "move scratchpad"
+        else: "focus"
+      )
     ret = sway.run_command(sway_cmd)[0]
 
   sway.close
