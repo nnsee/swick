@@ -18,12 +18,12 @@ examples:
   # focus or launch obsidian with extra flags, implicitly use class
   swick -i:obsidian -c:'/bin/electron18 /usr/lib/obsidian/app.asar --force-device-scale-factor=1'"""
 
-proc optErr(err: string) {.inline.} =
+template optErr(err: string) =
   echo err & ", bailing"
   echo "run with flag -h for help"
   system.quit 1
 
-proc parseOpts(): (string, string, string) =
+when isMainModule:
   var use, identifier, cmd: string
   var p = initOptParser()
   while true:
@@ -60,11 +60,7 @@ proc parseOpts(): (string, string, string) =
   if use == "":
     use = "class"
 
-  return (use, identifier, cmd)
-
-when isMainModule:
   let
-    (use, identifier, cmd) = parseOpts()
     sway = connect()
     tree = sway.get_tree
     nodes =
